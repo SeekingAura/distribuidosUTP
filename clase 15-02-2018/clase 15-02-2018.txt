@@ -1,0 +1,50 @@
+*** Comunicación ***
+1. Cliente-Servidor: solicitud-respuesta (send-receive)
+
+TCP: Orientado a conexión
+UDP: no orientado a conexión
+
+Conjunto de procesos que trabajan de manera colaborativa para ofrecer servicios a otros procesos y usuarios.
+
+Capas de OSI:
+	- Fisica: la MAC
+	- Enlace de base de datos: enrutado
+	- Sesión: Credenciales (IP)
+
+Presentation logic services:
+		# Client-Host #			|		# Server #
+								|
+	Application logic			|	Application logic
+								|	
+	Communications Software		|	Communications Software
+								|
+	Client OSI					|		Server OS
+								|
+	Hardware plataform			|	Hardware plataform
+								|	
+						
+Servidor intermedio: Sirve para convertir protocolos, traducir consultas, mezclar e integrar resultados
+
+Direccionamiento:
+	1. Integrar machine.number en el código cliente. No es transparente
+	2. Dejar que los procesos elijan direcciones al azar y localizar enviando mensajes, esto da un problema de "Carga adicional"
+	3. Servidor de nombres, buscarlos en tiempo de ejecución
+	
+Bloqueo vs no bloqueo:
+	1. Bloqueo: hasta que el mensaje no es enviado o recibido el programa no continúa su ejecución, el problema es que abra muchos tiempos de CPU inactiva
+	2. Sin bloqueo con copia: núcleo copia el mensaje en un buffer, Desperdicio de tiempo de CPU por crear las copias y verificarlas
+	3. Sin bloqueo con interrupciones: interrumpir cuando llega un mensaje
+	
+Almacenamiento:
+	1. No usar buffers: ser pierden mensajes inesperados
+	2. Cache temporal
+	3. Buzones
+	
+Confiabilidad:
+	1. No confiable
+	2. Solicitud-ACK-Respuesta-ACK
+		   C	  S		S		C
+	3. Solicitud-Respuesta-ACK
+		   C		S		C
+
+

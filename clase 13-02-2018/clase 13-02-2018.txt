@@ -1,0 +1,4 @@
+Los puertos que hay disponibles a ocupar son del 1024 al ... 0 y 10000 puertos disponibles
+Protocolos de capa de transporte
+TPC: establece una conexión para el envio de mensajes
+UDP: 

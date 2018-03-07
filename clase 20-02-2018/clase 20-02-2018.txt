@@ -1,0 +1,3 @@
+RPC:
+
+Introspection: revisar hacia dentro de la conexión

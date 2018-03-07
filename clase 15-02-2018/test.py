@@ -1,0 +1,6 @@
+algo=("localhost", 5500)
+esto=str(algo)
+x, y=esto[1:-1].split(", ")
+print(int(y))
+#print(addr in yolo.values())
+#print([k for k,v in yolo.items() if v == addr][0])

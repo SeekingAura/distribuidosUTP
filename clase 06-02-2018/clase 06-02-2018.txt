@@ -1,0 +1,130 @@
+Nombre docente: Carlos Medina
+Correo docente: pepe@utp.edu.co
+número docente: +57 311 307 5719
+
+Contenido - Sistemas distribuidos
+	1. Introducción
+	2. Comunicación
+	3. Sincronización
+	4. Procesos y procesadores
+	5. Archivos
+	6. Memoria
+	7. Seguridad
+
+Sistemas distribuidos de talenbound
+
+Notas:
+	Parcial I: 		20% - semana 7
+	Parcial II: 	20%	- semana 16
+	Talleres: 		20% - continuo - 2 personas
+	
+	Proyecto I: 	20% - 3 y 10 abril
+	Proyecto II: 	20% - Semanas de finales 2 (2 personas)
+	
+
+------ Exposición ------	
+Contenido - Diapositivas:
+	1. Motivación
+	2. Propiedades de los sistemas distribuidos
+	3. Aplicaciones distribuidas..
+	
+	
+Motivación:
+	Objetivo: compartir recursos (servicios, recursos)
+	
+	Tipos de sistemas:
+		- Sistemas por lotes:
+		- Sistemas centralizados de tiempo compartido: terminal, es decir dispositivos de entrada y salida que ordenan sentencias al mediador
+		- Sistemas teleproceso: red telefónica, Repartición de peticiones una de estas es uniendo por canales
+		- Sistemas personales: estaciones de trabajo, PC's
+		- Sistemas en red: cliente/servidor, protocolos (TCP/IP), *base de los sistemas distribuidos*
+		- Sistemas distribuidos: transparencia (GUI, RPC/RMI)
+		
+	Nota :Lo mas importante de un sistema distribuido es compartir 2 recursos (CPU y Memoria)
+	
+	"A distributed system is a collection of independent computers that appears to its users as a single coherent system"
+	
+	Una definición de sistema distribuido
+		1. Conjunto de computadores
+		2. Interconectados
+			- Igual que un sistema en red
+		3. Que comparten un estado
+		4. Ofreciendo una visión de sistema único (SSI)
+			- Igual que un sistema centralizado
+			
+	- Un sistema distribuido es software - > Middleware
+	
+	Middleware:
+		Cliente: Programa que solicita/peticiones a un servidor
+		Servidor: Programa proveer del servicio
+		Middleware: Permite la comunicación/conexión entre el cliente y servidor (normalmente librerias)
+	
+	distribuited system organized as middleware. The middleware layer extends over multiple machines, and offers each aplication the same interface.
+	
+	Ventajas respecto a un sistema centralizado
+		- bajo coste: puede estar compuesto de PC's estándar
+		- Escalabilidad: consecuencia de su modularidad
+		- 
+		
+	Desventajas respecto a un sistema centralizado
+		- Un sistemas centralizado del mismo coste es más eficiente que cada uno de los componentes del sistema distribuido
+		- Si la distribución de recursos es inadecuada algunos recursos pueden estar desbordados mientras otros están libres
+		- Mantener la consistencia puede ser muy "ccostoso"
+		- La red interconexión es una fuente de problemas
+		- La gestión de la seguridad es más compleja
+		
+	consistencia: mantener la información actualizada y sostenerla
+	
+	Tendencias:
+		- Informática móvil
+			* Nuevos Dispositivos: PDAs, telefonos , móviles con Java...
+			* Redes inalámbricas, redes ad-hoc
+		- Sistemas ubcuos
+			* Computadores ubicuos: hogar (domótica), automóvil, oficina, hospitales...
+			* Un entorno ubicuo es por naturaleza cambiante
+			* Protocolos para descubrimiento de recursos: Jini, UPnP
+			
+Propiedades de los Sistemas Distribuidos
+	Transparencia:
+		- De identificación: Los espacios de nombres de los recursos son independientes de la toplogía de la red y de la propia distribución de los recursos - No importa si se cambia de lugar la maquina, cada una tiene un nombre y debe ser el mismo siempre
+		- De ubicación: Los recursos pueden migrar entre nodos - 
+		- De replcación - No es necesario saber si se hacen copias o no de seguridad solo improta garantizar siempre el acceso de este
+		- De paralelismo: Sin que la aplicación lo especifique y sin consecuencias negativas sobre la ejecución
+		- De compartición: accesos simultáneos a recursos
+		- De rendimiento: Es necesario buscar soluciones de compromiso cuando la degradación del rendimiento hace impracticable implementar alguna de las propiedades - Hay procesos como los de seguridad que requieren procesamientos complejos, entonces no se requiere una seguridad exagedamente alta por que afecta
+		
+	Transparencia de identificación y ubicación
+		* En todo sistema distribuido cuando se pide un recurso se sabe en que maquina y donde está pero hay variedad de problemas
+		* una cosa es decirle a la maquina en que maquina esta y donde está el recurso
+		* 
+		El ideal es que El proceso pida el recurso sin que requiera saber donde esta
+		
+	Escalabilidad:
+		Capacidad de crecer sin disminuir su rendimiento
+			* Basada en modularidad
+		- Espacios de nombres
+			* Identifican objetos de diferente naturaleza: ficheros, procesos, variables, direcciones de memoria (DSM)
+			* Espacios lineas (memorias): 32 bits insuficientes
+			* En general los espacios de nombres son jerárquicos y por lo tanto escalables por naturaleza
+		- Mantenimiento del rendimiento: replicación
+			* Mirroring, caching
+			* obtener transparencia de replicación es complejo / costoso
+
+	Fiabilidad: "A distributed sysgtem is one in which the failure of computer you didn't even know existed can render your own computer unusable" (Leslie Lamport"
+	"Capacidad para realizar correctamente y en todo momento las funcioens para las que se ha diseñado"
+		- Disponibilidad:
+			* Fracción de tiempo que el sistema está operativo (%)
+				# parámetros: MTBF ()
+			
+	Consistencia:
+		- Problemas relacionados con la replicación
+			* la red de interconexión es una nueva fuente de fallos
+			* la seguridad del sistema es más vulnerable
+			* La gestión dle estado global es más compleja / costosa
+		- Problemas para mantener la consistencia
+			* Distribución fisica
+			* Errores y/o retardos en las comunicaciones
+			* Ausencia de reloj global: Cómo ordenar eventos?
+		Técnicas: transacciones, comunicación a grupos
+		Para un rendeimiento aceptable
+		

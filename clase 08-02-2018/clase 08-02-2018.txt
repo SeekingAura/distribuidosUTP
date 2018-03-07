@@ -1,0 +1,126 @@
+Los recursos mas importantes en un sistem adistribuido es:
+	- Memoria
+	- Procesador
+
+Memoria virtual: Espacio que se usa en el disco como RAM cuando la RAM como tal esta llena.
+
+Segmento: es un conjunto de paginas lo ucal es dinamico
+Pagina: Es un espacio de memoria fijo definido por el sistema
+sistema de archivos: Conjunto de reglas que indica que se puede hacer sobre un archivo y el como es ordenado.
+	- Listas de acceso
+	- Permisos
+	
+Hilos: canales en donde donde fluye la información de los procesos
+Proceso: estos pueden manejar varios hilos, y estos manejan la información
+
+Proceso suspendido:
+	Los recursos son movidos a memoria virtual, para asi aprovechar recursos en la RAM
+	
+Proceso bloqeuado:
+	Los recursos estan en la memoria RAM y no son usanbles
+	
+#-----------------------#
+Aplicaciones paralelas: son las que comparten recursos entre si y pueden trabajar en conjunto
+	- Disminuir el tiempo de ejecución
+	
+Cluster computing: Unión de varias CPU's para alto rendimiento
+	
+Caching: Memoria intermedia donde se guardan los datos mas usados
+
+Mirroring: Copia exacta del servicio
+
+Ubicuidad: estar todos los lugares al mismo tiempo (literalmente) asi como tener camaras en todos los negocios y verlos todos al tiempo
+Movilidad: es la facilidad de acceso a la ubicuidad
+
+Clasificación Flynn - Taxonomia de flyn:
+	- SISD: Single Instruction Single Data, Von Neumann
+	- SIMD: Single Instruction Multiple Data, Procesadores Vectoriales
+	- MISD: Multiple Instruction Single Data
+	- MIMD: Multiple Instruction Multiple Data, multiprocesadores, multicomputadoras
+	
+Multicompotadoras: Es la el uso de varios modulos con CPU y memoria juntos entre si cada uno
+Multiprocesadores: Es la combinación de varios modulos CPU y varios modulos de memoria en manera independiente entre si, lo mismo es que si se le delega a varios procesadores una misma memoria
+
+#------------#
+Acoplamiento:
+	- Conexión en Bus y memoria fisica compartida: Multiprocesadores
+	- Interconexión y memoria fisica compartida: UMA y NUMA
+	- Conexión en bus y memoria independiente: Multicomputadoras LAN
+	- Interconexión y Memoria Independiente: Multicomputadoras WAN
+	
+Soporte y Software:
+	- Cada nodo (Es decir cada dispositivo como ordenador, movil) en la red posee su propio SO
+	- Aplicaciones y servicios
+	
+	La comunicación entre dispositivos se hace por medio del *Middleware* lo cual sin improtar el sistema operativo es posible la comunicación ya que manejan un mismo protocolo sea TPC/IP o UDP u otros.
+	
+	Application		|		Application
+				 TCP/UDP
+	Middleware		IP		Middleware
+	-----------------------------------
+				Paso de
+				Mensajes
+		OS			|			OS
+		
+	Lo que sea usa para compartir la memoria entre procesos son cosas como
+		- FIFO
+		- Pipeline
+		- Buzones
+		
+
+Memoria compartida y distribuida:
+	- Memoria compartida y Memoria física compartida (Mismo equipo): Variables compartidas
+	- Memoria compartida y Paso de mensajes: pipes, colas FIFO, Sockets UNIX
+	- Paso de mensajes y Memoria física distribuida: Sockets INET, MPI, ROC
+	- Memoria compartida y memoria física distribuida: Memoria compartida distribuida (Distributed Shared Memory - DSM), Objetos distribuidos (Servicios Web)
+	
+	Socket: Abstracción de mas bajo nivel para establecer comunciación entre un equipo y otro
+	
+	
+	  servicios web
+			↑
+	Objetos distribuidos
+			↑
+		   RPC
+			↑
+		 Sockets
+	
+Flexibilidad:
+	- Monoliticos: Todos los servicios estan el núcleo o Kernel
+		Por ejemplo: Un programa posee varios modulos, entonces normalmente cuando se instala un nuevo programa varias de las veces el sistema operativo requeire de un reinicio para agregarlo a su conjunto de modulos, un solo sistema con todo
+	
+	- Micronucleos: Funciones básicas
+		* Adminsitración de la memoria
+		* Administración de bajo nivel
+		- Bajo nivel
+		- 
+		
+		Por ejemplo: Es separar los modulos en varios dispositivos según sus funciones, colcoando un núcleo con funcioens basicas y los demas con funciones especificas asi como administrador de archivos, manejo de procesos, entradas y salidas, memoria, etc; lo cual esto permite la *flexibilidad*
+		- Un nucleo suele ser un cliente y los servicios especificos son servidores
+		
+	
+	
+	
+Aplicaciones				|		Aplicaciones		|	|		Aplicaciones		|	|		Aplicaciones		|
+Servicios del sistema		|	Servicios, Middleware	|	|	Servicios, Middleware	|	|	Servicios, Middleware	|
+Hardware distribuido y red	|	Sistema Operativo		|	|	Sistema Operativo		|	|	Sistema Operativo		|
+		↑					|____________________________________________________________________________________________
+Visión del usuario			| 									Hardware distribuido y red
+	
+Servicios middleware:
+		- Comunicación
+		- tiempos,
+		- Consistencia
+		- Seguridad
+		- Nombres
+		- Eventos
+	
+	
+	
+	
+	
+	
+	
+Tarea:
+	- Hacer un servidor Eco
+	- Hacer un servidor que reciba dos números y devuelva el resultado de la suma de estos
