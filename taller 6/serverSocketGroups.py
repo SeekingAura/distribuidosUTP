@@ -55,7 +55,7 @@ class UDPSocketServerMain:
 		button.grid(row=5, columnspan=2)
 		self.clientDato=""
 		#Temp value
-		
+		self.opReq=False
 	def yview(self, *args):
 		self.TextoBox.yview(*args)
 		self.TextoBox2.yview(*args)
@@ -71,18 +71,17 @@ class UDPSocketServerMain:
 	def sendCom1(self):
 		value=self.command1.get()
 		self.answer1.set("processing...")
-		self.TextoBox.insert(tkinter.END, "\n"+value)
-		self.TextoBox.see(tkinter.END)
+		self.serverDato=value
 		self.command1.set("")
-		self.answer1.set("Ready")
+		#self.answer1.set("Ready")
+		self.opReq=True
 		
 	def sendCom2(self):
 		value=self.command2.get()
 		self.answer2.set("processing...")
-		self.TextoBox2.insert(tkinter.END, "\n"+value)
-		self.TextoBox2.see(tkinter.END)
+		self.clientDato=value
 		self.command2.set("")
-		self.answer2.set("Ready")
+		#self.answer2.set("Ready")
 	def runGraph(self):
 		self.root.mainloop()
 
@@ -137,6 +136,8 @@ class UDPSocketServerMain:
 	def recieveMsg(self, size=int(1024), trys=int(5), sock=""):
 		for i in range(trys):
 			try:
+				if(self.opReq):
+					break
 				data, addr = sock.recvfrom(size)
 				
 				if(self.sockServer==sock):
@@ -220,12 +221,15 @@ class UDPSocketServerMain:
 					if(addrExp==addrClient):
 						ip, port=self.getAddres(mensajeTemp)
 						addres=(ip, port)
-						temp=0
+						temp=-1
 						for enum, i in enumerate(self.salas[tipoClient]):
-							if(i["addres"][0]==addres):
+							if(i["addres"][1]==addres):
 								temp=enum
+								# print("valor de pos de borrado", temp)
 								break
-						self.salas[tipoClient].pop(temp)
+						if(temp!=-1):
+							self.salas[tipoClient].pop(temp)
+						
 
 	def runServerClients(self):
 		while True:
@@ -259,6 +263,7 @@ class UDPSocketServerSuma(UDPSocketServerMain):
 		UDPSocketServerMain.__init__(self, ipServer, puertoServer, ipClient, puertoClient,  tipo)
 		self.operar=False
 		self.servers=[[self.sockClient.getsockname(), False]]
+		
 
 	def MathSuma(self, value1, value2):
 		return float(value1)+float(value2)
@@ -277,12 +282,13 @@ class UDPSocketServerSuma(UDPSocketServerMain):
 			rolTemp, tipoTemp, mensajeTemp, addrTemp=self.recieveMsg(sock=self.sockServer)
 			if(mensajeTemp=="nueva sala"):
 				self.rol="admin"
-				#root.wm_title("Hello, world")
+				self.root.wm_title(self.tipo+self.rol)
 				clientAddres=self.sockClient.getsockname()
 				self.sendMsg(message=str(clientAddres[0])+", "+str(clientAddres[1]), addres=addresMain, trys=int(5), sock=self.sockServer)
 				break
 			elif(mensajeTemp=="agregado"):
 				self.rol="operador"
+				self.root.wm_title(self.tipo+self.rol)
 				clientAddres=self.sockClient.getsockname()
 				self.sendMsg(message=str(clientAddres[0])+", "+str(clientAddres[1]), addres=addresMain, trys=int(5), sock=self.sockServer)
 				break
@@ -297,6 +303,8 @@ class UDPSocketServerSuma(UDPSocketServerMain):
 			rolTemp, tipoTemp, mensajeTemp, addrTemp=self.recieveMsg(sock=self.sockServer)
 			if(mensajeTemp=="expulsar"):
 				#print("el servidor principal le ha sacado del grupo de servidores")
+				print("EXPULSADO!")
+				raise SystemExit(1)
 				break
 			elif(mensajeTemp=="registre nuevo"):
 				rolTemp, tipoTemp, mensajeTemp, addrTemp=self.recieveMsg(sock=self.sockServer)
@@ -324,7 +332,30 @@ class UDPSocketServerSuma(UDPSocketServerMain):
 									self.sendMsg(message="si", addres=i[0], trys=int(5), sock=self.sockServer)
 								else:
 									self.sendMsg(message="no", addres=i[0], trys=int(5), sock=self.sockServer)
+			elif(self.serverDato!=""):
+				if(self.serverDato[0:8]=="expulsar"):
+					self.answer1.set("Expulsando")
+					self.sendMsg(message="expulsar", addres=addresMain, trys=int(5), sock=self.sockServer)
+					print("valor ", self.serverDato[9:])
+					ip, port=self.serverDato[9:].split(", ")
+					self.sendMsg(message=self.serverDato[9:], addres=addresMain, trys=int(5), sock=self.sockServer)
+					temp=0
+					for i in self.servers:
+						#print("comparando este {} con {}".format(i[0], (ip, int(port))))
+						if(i[0]==(ip, int(port))):
+							break
+						temp+=1
+					#print("temp value {} len value {}".format(temp, len(self.servers)))
+					if(len(self.servers)>temp):
+						self.servers.pop(temp)
+						self.sendMsg(message="expulsar", addres=(ip, int(port)), trys=int(5), sock=self.sockServer)
+					else:
+						self.sendMsg(message="nada", addres=(ip, int(port)), trys=int(5), sock=self.sockServer)
 					
+				self.serverDato=""
+				self.opReq=False
+
+
 		
 	def runServerClients(self):
 		#print("Esperando registro...")
@@ -346,7 +377,7 @@ class UDPSocketServerSuma(UDPSocketServerMain):
 						self.printBox2("esperando por valores de operación")
 						rolTemp, tipoTemp, mensajeTemp, addrTemp=self.recieveMsg(sock=self.sockClient)
 						#print("valores de operando", addrTemp, addrClient)
-						self.printBox2("valores de operando", addrTemp, addrClient)
+						self.printBox2("valores de operando {} {}".format(str(addrTemp), str(addrClient)))
 						if(addrTemp==addrClient):
 							x, y=mensajeTemp.split(", ")
 							result=self.MathSuma(x,y)
