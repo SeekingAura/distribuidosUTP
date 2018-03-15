@@ -95,7 +95,7 @@ class serverRPC:
 		self.server=SimpleXMLRPCServer((ip, puerto), requestHandler=RequestHandler, allow_none=True)
 		self.server.register_introspection_functions()
 		self.ip=ip
-		self.puerto=puerto
+		self.puerto=str(puerto)
 		self.tipo=tipo
 		self.conecction=None
 		self.servers=[]
@@ -135,11 +135,14 @@ class serverRPC:
 		button.grid(row=3, columnspan=2)
 		
 		
-		if(tipo=="main"):
-			button = tkinter.Button(frame, text='Sinc AllClock', command=self.sincAll)
-			button.grid(row=2, columnspan=1)
 		
+		button = tkinter.Button(frame, text='Sinc AllClock', command=self.sincAll)
+		button.grid(row=2, columnspan=1)
 		
+		self.buttonReg=None
+		if(tipo!="main"):
+			self.buttonReg = tkinter.Button(frame, text='Register', command=self.registrar)
+			self.buttonReg.grid(row=4, columnspan=1)
 		self.updateClock()
 
 	def printBox(self, value):
@@ -172,6 +175,9 @@ class serverRPC:
 	def stopClock(self):
 		self.clockTime.freezeTime()
 
+	def getAddres(self):
+		return (self.ip, self.puerto)
+
 	# Server functions
 	def getTime(self):
 		return self.clockTime.getTime()
@@ -201,12 +207,24 @@ class serverRPC:
 	# Funciones del servidor para el cliente
 	def register(self, ipServer, puertoServer):
 		value=xmlrpc.client.ServerProxy("http://"+ipServer+":"+puertoServer)
+		if(self.tipo=="main"):
+			for i in self.servers:
+				print("registrando en {} la dir {} {}".format(i.getAddres(), ipServer, puertoServer))
+				i.register(ipServer, puertoServer)
+				ip, puerto=i.getAddres()
+				print("registrando la dir {} {}".format(ip, puerto))
+				value.register(ip, puerto)
 		self.servers.append(value)
 		self.printBox("Se ha registrado el servidor {}".format("http://"+ipServer+":"+puertoServer))
-
+	
+	def registrar(self):
+		self.conecction.register(self.ip, self.puerto)
+		self.buttonReg.state=tkinter.DISABLED
+		
 	def sincAll(self):
+		self.dataClock.append(self.conecction.getTime())
 		for i in self.servers:
-			self.dataClock.append(i.getTime()-time.clock())
+			self.dataClock.append(i.getTime())
 		lastSize=len(self.dataClock)
 		lastnewSize=0
 		while lastSize!=lastnewSize:
@@ -215,13 +233,11 @@ class serverRPC:
 				break
 			timeMedia=self.desvEst()
 			lastnewSize=len(self.dataClock)
-		for i in self.servers:
-			i.setTime(timeMedia+time.clock())
 		self.setTime(timeMedia+time.clock())
 		timeValue=timeMedia+time.clock()
 		tempTime=time.asctime(time.localtime(timeValue))
 		
-		self.printBox("Enviado a todos -> {}".format(tempTime[11:19]+"\n"+tempTime[0:4]+tempTime[8:10]+"/"+tempTime[4:6]+"/"+tempTime[20:24]))
+		self.printBox("Cambiando a tiempo -> {}".format(tempTime[11:19]+"\n"+tempTime[0:4]+tempTime[8:10]+"/"+tempTime[4:6]+"/"+tempTime[20:24]))
 		self.dataClock=[]
 		self.clock.after(5000, self.sincAll)
 
@@ -252,13 +268,14 @@ class serverRPC:
 		print("corriendo server de tipo {}".format(self.tipo))
 		if self.tipo=="main":
 			self.server.register_function(self.register, 'register')
-		else:
-			self.server.register_function(self.setTime, 'setTime')
 			self.server.register_function(self.getTime, 'getTime')
+		else:
+			self.server.register_function(self.register, 'register')
+			self.server.register_function(self.getTime, 'getTime')
+			self.server.register_function(self.getAddres, 'getAddres')
 			ipServer = str(input("Ingrese la ip del server principal"))
 			puertoServer = str(input("ingrese el puerto del server principal"))
-			self.conecction=xmlrpc.client.ServerProxy("http://"+ipServer+":"+puertoServer, allow_none=True)
-			self.conecction.register(self.ip, str(self.puerto))
+			self.conecction=xmlrpc.client.ServerProxy("http://"+ipServer+":"+puertoServer, allow_none=True)			
 		self.server.serve_forever()
 
 if __name__ == "__main__":
