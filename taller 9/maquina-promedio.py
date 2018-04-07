@@ -140,9 +140,6 @@ class serverRPC:
 		button.grid(row=2, columnspan=1)
 		
 		self.buttonReg=None
-		if(tipo!="main"):
-			self.buttonReg = tkinter.Button(frame, text='Register', command=self.registrar)
-			self.buttonReg.grid(row=4, columnspan=1)
 		self.updateClock()
 
 	def printBox(self, value):
@@ -182,6 +179,9 @@ class serverRPC:
 	def getTime(self):
 		return self.clockTime.getTime()
 	
+	def getAllAddres(self):
+		return self.servers
+
 	def sincClock(self):
 		if(self.conecction is not None):
 			if(not self.clockTime.sincTime):
@@ -207,22 +207,26 @@ class serverRPC:
 	# Funciones del servidor para el cliente
 	def register(self, ipServer, puertoServer):
 		value=xmlrpc.client.ServerProxy("http://"+ipServer+":"+puertoServer)
-		if(self.tipo=="main"):
-			for i in self.servers:
-				print("registrando en {} la dir {} {}".format(i.getAddres(), ipServer, puertoServer))
-				i.register(ipServer, puertoServer)
-				ip, puerto=i.getAddres()
-				print("registrando la dir {} {}".format(ip, puerto))
-				value.register(ip, puerto)
 		self.servers.append(value)
+		print("servidores", self.servers)
 		self.printBox("Se ha registrado el servidor {}".format("http://"+ipServer+":"+puertoServer))
-	
-	def registrar(self):
-		self.conecction.register(self.ip, self.puerto)
-		self.buttonReg.state=tkinter.DISABLED
 		
 	def sincAll(self):
-		self.dataClock.append(self.conecction.getTime())
+		if(self.tipo!="main"):
+			self.dataClock.append(self.conecction.getTime())
+		else:
+			self.dataClock.append(self.getTime())
+		if(self.tipo!="main"):
+			addres=self.conecction.getAllAddres()#
+			self.servers=[]
+			for i in addres:
+				value=xmlrpc.client.ServerProxy("http://"+i["_ServerProxy__host"], allow_none=True)
+				
+				self.servers.append(value)
+		else:
+			self.getAddres()
+		
+		
 		for i in self.servers:
 			self.dataClock.append(i.getTime())
 		lastSize=len(self.dataClock)
@@ -262,20 +266,20 @@ class serverRPC:
 			self.dataClock.pop(i-enum) 
 		return media
 
-		
 
 	def runServer(self):
 		print("corriendo server de tipo {}".format(self.tipo))
 		if self.tipo=="main":
 			self.server.register_function(self.register, 'register')
 			self.server.register_function(self.getTime, 'getTime')
+			self.server.register_function(self.getAllAddres, 'getAllAddres')
 		else:
-			self.server.register_function(self.register, 'register')
 			self.server.register_function(self.getTime, 'getTime')
 			self.server.register_function(self.getAddres, 'getAddres')
 			ipServer = str(input("Ingrese la ip del server principal"))
 			puertoServer = str(input("ingrese el puerto del server principal"))
-			self.conecction=xmlrpc.client.ServerProxy("http://"+ipServer+":"+puertoServer, allow_none=True)			
+			self.conecction=xmlrpc.client.ServerProxy("http://"+ipServer+":"+puertoServer, allow_none=True)
+			self.conecction.register(self.ip, self.puerto)
 		self.server.serve_forever()
 
 if __name__ == "__main__":
