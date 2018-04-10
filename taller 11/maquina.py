@@ -25,6 +25,12 @@ class serverRPC:
 		self.procesadorGhz=procesadorGhz
 		self.ramMB=ramMB
         
+		#Control Tkinter
+		self.executing=False
+		self.executingHelp=False
+		self.startExecuteTime=0.0
+		self.numberOfExecutes=0
+
         #Tkinter
 		self.root = tkinter.Tk()
 		self.root.wm_title("machine-"+tipo)#da el titulo a la ventana
@@ -39,17 +45,18 @@ class serverRPC:
 		frame.pack()
 		
 
-		tkinter.Label(frame, text='Procesador (Ghz)').grid(row=0, column=0)
-		self.BoxProcesador = tkinter.DoubleVar()
-		tkinter.Entry(frame, textvariable=self.BoxProcesador).grid(row=0, column=1)
-		tkinter.Label(frame, text='Ram (MB)').grid(row=0, column=2)
-		self.BoxRAM = tkinter.DoubleVar()
+		
 		tkinter.Entry(frame, textvariable=self.BoxRAM).grid(row=0, column=3)
 		tkinter.Label(frame, text='Estado').grid(row=1, column=0)
 		self.answer = tkinter.StringVar()
 		tkinter.Label(frame, textvariable=self.answer).grid(row=1, column=1)
 		self.buttonSend=None
 		if(tipo[:6]!="server" and tipo!="main"):
+			tkinter.Label(frame, text='Procesador (Ghz)').grid(row=0, column=0)
+			self.BoxProcesador = tkinter.DoubleVar()
+			tkinter.Entry(frame, textvariable=self.BoxProcesador).grid(row=0, column=1)
+			tkinter.Label(frame, text='Ram (MB)').grid(row=0, column=2)
+			self.BoxRAM = tkinter.DoubleVar()
 			self.buttonSend = tkinter.Button(frame, text='Send', command=self.sendCom)
 			self.buttonSend.grid(row=2, columnspan=2)
 		
@@ -59,7 +66,11 @@ class serverRPC:
 		self.TextoBox.insert(tkinter.END, "\n"+str(value))
 		self.TextoBox.see(tkinter.END)
 	
+	def printBoxRemote(self, value):
+		self.TextoBox.after(250, self.printBox, str(value))
+
 	def sendCom(self):
+		self.buttonSend.config(state="disable")
 		valueProcesador=self.BoxProcesador.get()
 		valueRAM=self.BoxRAM.get()
 		if(valueProcesador is not None and valueRAM is not None):
@@ -67,19 +78,15 @@ class serverRPC:
 			self.BoxProcesador.set("")
 			self.BoxRAM.set("")
 			if(serverToGet is not None):
-				self.busyWith=xmlrpc.client.ServerProxy(serverToGet)
-				self.buttonSend.after(5000, self.cleanProcess())
-				#self.buttonExec.after(5000, self.execute)
+
+				self.busyWith=self.getServer(serverToGet)
 				
-
-
-
-		#date, tiempo=self.command.get().split(" ")
-		self.answer.set("processing...")
-		#self.serverDato=value
+				self.startExecute()
 		
-		#self.answer1.set("Ready")
-	
+		self.answer.set("processing...")
+	def getServer(self, serverToGet):
+		self.buttonSend.after(10000, self.cleanProcess)
+		return xmlrpc.client.ServerProxy(serverToGet)
 	def runGraph(self):
 		self.root.mainloop()
 	
@@ -87,6 +94,24 @@ class serverRPC:
 	def getStatus(self):
 		return self.procesadorGhz, self.ramMB
 
+	def startExecute(self):
+		self.answer.set("Ejecutando...")
+		self.executing=True
+		self.numberOfExecutes=0
+		self.executeLocal()
+
+	def executeLocal(self):
+
+		if(self.busyWith is not None and self.executing):
+			self.numberOfExecutes+=1
+			self.busyWith.printBoxRemote("Ejecutando vez {}, proveniente de {}%".format(self.numberOfExecutes, "http://"+self.ip+":"+str(self.puerto)))
+			
+					
+		if(self.executing):
+			self.numberOfExecutes+=1
+			self.printBox("Ejecutando vez {}".format(self.numberOfExecutes))
+			self.buttonSend.after(250, self.executeLocal)
+	
 
 	def getExecuter(self, procesadorGhz=1.0, ramMB=8192, machine=""):
 		self.printBox("Buscando equipo con procesador {} Ghz y ram {} MB".format(procesadorGhz, ramMB))
@@ -135,11 +160,14 @@ class serverRPC:
 
 	def cleanProcess(self):
 		self.printBox("Se ha terminado el compartido a {}".format(self.busyWith))
-		if(self.tipo[:7]=="cliente"):
+		if(self.tipo[:6]!="server" and self.tipo!="main"):
 			self.busyWith.cleanProcess()
-			self.busyWith=None
-		else:
-			self.busyWith=None
+			self.buttonSend.config(state="normal")
+
+		
+		self.busyWith=None
+		self.executing=False
+		self.answer.set("Ready")
 
 			
 
@@ -161,6 +189,7 @@ class serverRPC:
 			self.server.register_function(self.setProcess, 'setProcess')
 			self.server.register_function(self.getStatus, 'getStatus')
 			self.server.register_function(self.cleanProcess, 'cleanProcess')
+			self.server.register_function(self.printBoxRemote, 'printBoxRemote')
 			ipServer = str(input("Ingrese la ip del server principal\n"))
 			puertoServer = str(input("ingrese el puerto del server principal\n"))
 			
