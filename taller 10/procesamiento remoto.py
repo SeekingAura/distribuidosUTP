@@ -84,18 +84,13 @@ class serverRPC:
 	
 	def executeLocal(self):
 
-		if(psutil.cpu_percent()<20 and self.startExecuteTime+10>=time.time() and not self.executingHelp):#Calcula el valor de la cpu
+		if(psutil.cpu_percent()>20 and self.startExecuteTime+10<=time.time() and not self.executingHelp):#Calcula el valor de la cpu
 			self.executeHelp()
 			self.executingHelp=True
 		elif(self.executingHelp and self.busyWith is not None):
 			self.numberOfExecutes+=1
 			self.busyWith.printBoxRemote("Ejecutando vez {}, proveniente de {}%".format(self.numberOfExecutes, "http://"+self.ip+":"+str(self.puerto)))
-			
 				
-				
-		
-					
-					
 		if(self.executing):
 			self.numberOfExecutes+=1
 			self.printBox("Ejecutando vez {}, estado procesador {}%".format(self.numberOfExecutes, psutil.cpu_percent()))
@@ -137,6 +132,7 @@ class serverRPC:
 		
 		self.busyWith=None
 		self.executing=False
+		self.executingHelp=False
 		self.answer.set("Ready")
 		
 

@@ -3,6 +3,7 @@ import time
 import tkinter as tkinter
 import xmlrpc.client
 import sys
+import random
 from xmlrpc.server import SimpleXMLRPCRequestHandler, SimpleXMLRPCServer
 
 
@@ -12,7 +13,7 @@ class RequestHandler(SimpleXMLRPCRequestHandler):
 
 
 class serverRPC:
-	def __init__(self, ip="localhost", puerto=5500, tipo="main", procesadorGhz=1.0, ramMB=8192 ):
+	def __init__(self, ip="localhost", puerto=5500, tipo="main"):
 		#Server Control
 		self.server=SimpleXMLRPCServer((ip, puerto), requestHandler=RequestHandler, allow_none=True)
 		self.server.register_introspection_functions()
@@ -21,17 +22,18 @@ class serverRPC:
 		self.tipo=tipo
 		self.conecction=None
 		self.busyWith=None
-		self.servers=[]
-		self.procesadorGhz=procesadorGhz
-		self.ramMB=ramMB
-        
+		self.procesador=0
+		self.servers={}
+		self.colaProceso=[]
+
 		#Control Tkinter
 		self.executing=False
 		self.executingHelp=False
+		self.needHelp=False
 		self.startExecuteTime=0.0
 		self.numberOfExecutes=0
 
-        #Tkinter
+		#Tkinter
 		self.root = tkinter.Tk()
 		self.root.wm_title("machine-"+tipo)#da el titulo a la ventana
 		
@@ -46,20 +48,13 @@ class serverRPC:
 		
 
 		
-		tkinter.Label(frame, text='Estado').grid(row=1, column=0)
+		self.aswerInfo=tkinter.Label(frame, text='Estado').grid(row=1, column=0)
 		self.answer = tkinter.StringVar()
 		tkinter.Label(frame, textvariable=self.answer).grid(row=1, column=1)
-		self.buttonSend=None
-		if(tipo[:6]!="server" and tipo!="main"):
-			tkinter.Label(frame, text='Procesador (Ghz)').grid(row=0, column=0)
-			self.BoxProcesador = tkinter.DoubleVar()
-			tkinter.Entry(frame, textvariable=self.BoxProcesador).grid(row=0, column=1)
-			tkinter.Label(frame, text='Ram (MB)').grid(row=0, column=2)
-			self.BoxRAM = tkinter.DoubleVar()
-			tkinter.Entry(frame, textvariable=self.BoxRAM).grid(row=0, column=3)
-			self.buttonSend = tkinter.Button(frame, text='Send', command=self.sendCom)
-			self.buttonSend.grid(row=2, columnspan=2)
-		
+		self.buttonExecute=None
+		if(tipo!="main"):
+			self.buttonExecute = tkinter.Button(frame, text='Execute', command=self.startExecute)
+			self.buttonExecute.grid(row=2, columnspan=2)
 		
 
 	def printBox(self, value):
@@ -68,41 +63,38 @@ class serverRPC:
 	
 	def printBoxRemote(self, value):
 		self.TextoBox.after(250, self.printBox, str(value))
-
-	def sendCom(self):
-		self.buttonSend.config(state="disable")
-		valueProcesador=self.BoxProcesador.get()
-		valueRAM=self.BoxRAM.get()
-		if(valueProcesador is not None and valueRAM is not None):
-			serverToGet=self.conecction.getExecuter(valueProcesador, valueRAM, "http://"+self.ip+":"+str(self.puerto))
-			self.BoxProcesador.set("")
-			self.BoxRAM.set("")
-			if(serverToGet is not None):
-
-				self.busyWith=self.getServer(serverToGet)
-				
-				self.startExecute()
 		
-		self.answer.set("processing...")
 	def getServer(self, serverToGet):
-		self.buttonSend.after(10000, self.cleanProcess)
-		return xmlrpc.client.ServerProxy(serverToGet)
+		if(serverToGet is not None):
+			self.buttonExecute.after(10000, self.cleanProcess)
+			return xmlrpc.client.ServerProxy(serverToGet, allow_none=True)
+		else:
+			return None
+
+	def setProcesador(self):
+		self.procesador=random.randint(0, 100)
+		print(self.procesador)
+		self.TextoBox.after(1000, self.setProcesador)
+
 	def runGraph(self):
 		self.root.mainloop()
 	
 
 	def getStatus(self):
-		return self.procesadorGhz, self.ramMB
+		if(not self.executingHelp and not self.busyWith):
+			return self.procesador
+		else:
+			return 100
 
 	def startExecute(self):
 		self.answer.set("Ejecutando...")
 		self.executing=True
 		self.numberOfExecutes=0
+		self.buttonExecute.config(state="disable")
 		self.executeLocal()
 
 	def executeLocal(self):
-
-		if(self.busyWith is not None and self.executing):
+		if(self.busyWith is not None and self.executing and not self.executingHelp):
 			self.numberOfExecutes+=1
 			self.busyWith.printBoxRemote("Ejecutando vez {}, proveniente de {}%".format(self.numberOfExecutes, "http://"+self.ip+":"+str(self.puerto)))
 			
@@ -110,63 +102,93 @@ class serverRPC:
 		if(self.executing):
 			self.numberOfExecutes+=1
 			self.printBox("Ejecutando vez {}".format(self.numberOfExecutes))
-			self.buttonSend.after(250, self.executeLocal)
+			self.buttonExecute.after(250, self.executeLocal)
 	
-
-	def getExecuter(self, procesadorGhz=1.0, ramMB=8192, machine=""):
-		self.printBox("Buscando equipo con procesador {} Ghz y ram {} MB".format(procesadorGhz, ramMB))
+		if(self.procesador>=70 and not self.executingHelp and self.busyWith is None):
+			self.needHelp=True
+		if(self.needHelp):#garantiza que siga solicitnado ayuda tras cada ejecución
+			self.busyWith=self.getServer(self.conecction.getExecuter("http://"+self.ip+":"+str(self.puerto)))
+			if(self.busyWith is not None):
+				self.needHelp=False
+			#self.printBox("Obtenido ayuda de {}".format(self.numberOfExecutes))
+			
+	def showTable(self):
+		self.printBox("Estado de tabla:")
+		for i in self.servers:
+			self.printBox(i+" -> "+str(self.servers.get(i)))
+	def getExecuter(self, machine):
+		
+		self.printBox("Buscando equipo Disponible para -> {}".format(machine))
+		self.showTable()
+		
 		servers=[]
 		
 		for i in self.servers:
 			servers.append([xmlrpc.client.ServerProxy(i), i])
 		
-		#machineConecction=xmlrpc.client.ServerProxy(machine)
 		serverToAsign=None
-		trys=0
-		while serverToAsign is None:
-			for i in servers:
-				procesador, ram=i[0].getStatus()
-				if(procesadorGhz<procesador and ramMB<ram):
-					if(i[0].setProcess(machine)):
-						serverToAsign=i[1]
-						self.printBox("Se ha encontrado un servidor")
-						break
-			if(trys>=10):
-				self.printBox("No hay servidores disponibles para lo recibido")
-				break
-			else:
-				trys+=1
+		#Get min value
+		temp=None
+		if(len(self.colaProceso)>0):
+			temp=self.servers.get(self.colaProceso[0])
+			for i in self.colaProceso:
+				newTemp=self.servers.get(i)
+				if(newTemp<temp):
+					temp=newTemp
+
+		if(temp is not None):
+			if(self.servers.get(machine)>temp):
+				self.printBox("No hay disponible - dado por la prioridad y cola")
+				if(not machine in self.colaProceso):
+					self.colaProceso.append(machine)
+					self.servers[machine]-=1
+				return None
+		
+		serverToAsign=None
+		for i in servers:
+			procesador=i[0].getStatus()
+			if(procesador<70):
+				if(i[0].setProcess("http://"+self.ip+":"+str(self.puerto))):
+					serverToAsign=i[1]
+					self.printBox("Se ha encontrado un servidor")
+					break
+		
 		if(serverToAsign is not None):
 			self.printBox("Entregado valor compartido {}".format(machine))
+			if(machine in self.colaProceso):
+				self.colaProceso.remove(machine)
+				
+			self.servers[machine]+=1
+			self.showTable()
 			return serverToAsign
-			#self.buttonExec.after(5000, self.execute)
 		else:
+			if(not machine in self.colaProceso):
+				self.colaProceso.append(machine)
+				self.servers[machine]-=1
+				self.showTable()
 			self.printBox("No hay disponible")
+			return None
 		
-		
-		
-		#else:
-		#	self.printBox("Terminado valor compartido con {}".format(self.busyWith))
-		#	self.busyWith.cleanProcess()
-		#	self.busyWith=None
 
 	def setProcess(self, client):
-		if(self.busyWith is None):
-			self.busyWith=client
-			self.printBox("Se ha dado compartido a {}".format(self.busyWith))
+		if(self.executingHelp is False):
+			self.printBox("Se ha dado compartido a {}".format(client))
+			self.executingHelp=True
 			return True
 		self.printBox("Estoy ocupado, No se le puede compartir a {}".format(self.busyWith))
 		return False
 
 	def cleanProcess(self):
-		self.printBox("Se ha terminado el compartido a {}".format(self.busyWith))
-		if(self.tipo[:6]!="server" and self.tipo!="main"):
+		self.printBox("Se ha terminado el compartido")
+		if(self.busyWith is not None and not isinstance(self.busyWith, str)):
 			self.busyWith.cleanProcess()
-			self.buttonSend.config(state="normal")
+			
 
 		
 		self.busyWith=None
 		self.executing=False
+		self.executingHelp=False
+		self.buttonExecute.config(state="normal")
 		self.answer.set("Ready")
 
 			
@@ -175,7 +197,7 @@ class serverRPC:
 	# Funciones del servidor para el cliente
 	def register(self, ipServer, puertoServer):
 		#value=xmlrpc.client.ServerProxy("http://"+ipServer+":"+puertoServer)
-		self.servers.append("http://"+ipServer+":"+puertoServer)
+		self.servers["http://"+ipServer+":"+puertoServer]=0
 		self.printBox("Se ha registrado el servidor {}".format("http://"+ipServer+":"+puertoServer))
 
 	
@@ -185,7 +207,7 @@ class serverRPC:
 			self.server.register_function(self.register, 'register')
 			self.server.register_function(self.getExecuter, 'getExecuter')
 
-		elif self.tipo[:6]=="server":
+		else:
 			self.server.register_function(self.setProcess, 'setProcess')
 			self.server.register_function(self.getStatus, 'getStatus')
 			self.server.register_function(self.cleanProcess, 'cleanProcess')
@@ -196,27 +218,14 @@ class serverRPC:
 			
 			self.conecction=xmlrpc.client.ServerProxy("http://"+ipServer+":"+puertoServer, allow_none=True)
 			self.conecction.register(self.ip, str(self.puerto))
-		elif(self.tipo[:7]=="cliente"):
-			#self.server.register_function(self.setTime, 'setTime')
-			#self.server.register_function(self.getTime, 'getTime')
-			ipServer = str(input("Ingrese la ip del server principal\n"))
-			puertoServer = str(input("ingrese el puerto del server principal\n"))
-			self.conecction=xmlrpc.client.ServerProxy("http://"+ipServer+":"+puertoServer, allow_none=True)
-		else:
-			print("Hay errores")
-			raise SystemExit(1)
+			self.setProcesador()
 		self.server.serve_forever()
 
 if __name__ == "__main__":
 	tipoServer=str(input("El tipo de servidor\n"))
 	ipServer = str(input("Ingrese la ip para el servidor\n"))
 	puertoServer = int(input("ingrese el puerto para el servidor\n"))
-	procesador=None
-	ram=None
-	if(tipoServer[:6]=="server"):
-		procesador = float(input("indique la frecuencia del procesador de este dispositivo \n"))
-		ram = float(input("indique la cantidad de ram (MB) de este dispositivo\n"))
-	server=serverRPC(ipServer, puertoServer, tipoServer, procesador, ram)
+	server=serverRPC(ipServer, puertoServer, tipoServer)
 	hilo1=threading.Thread(target=server.runServer)
 	hilo1.start()
 	server.runGraph()
