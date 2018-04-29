@@ -20,7 +20,6 @@ class serverRPC:
 		self.puerto=puerto
 		self.tipo=tipo
 		self.servers={}
-		self.filesPermission={}
 		self.filesBusy={}
 		self.filesList=[]
 		
@@ -123,6 +122,7 @@ class serverRPC:
 				if(self.filesBusy.get(i).get(j) is not None):
 					self.list.selection_set(tempIndex, tempIndex)
 				tempIndex+=1
+		self.printBox1("Mostrando ocupados")
 		self.answer.set("Ready")
 
 
@@ -133,7 +133,6 @@ class serverRPC:
 		#value=xmlrpc.client.ServerProxy("http://"+ipServer+":"+puertoServer)
 		self.answer.set("Registrando cliente")
 		self.servers["http://"+ipServer+":"+puertoServer]=xmlrpc.client.ServerProxy("http://"+ipServer+":"+puertoServer, allow_none=True)
-		self.filesPermission["http://"+ipServer+":"+puertoServer]={}
 		self.updateFilesAll()
 		self.printBox1("Se ha registrado el servidor {}".format("http://"+ipServer+":"+puertoServer))
 		self.answer.set("Ready")
@@ -149,22 +148,6 @@ class serverRPC:
 				elif not i in self.filesBusy.get(j):
 					self.filesBusy[j][i]=None
 
-	def updateFiles(self, machine):
-		permissions=["lectura", "escritura", "ninguno"]
-		self.answer.set("Actualizando permisos")
-		for i in self.servers.get(machine).getFiles():
-			if not i in self.filesPermission.get(machine):#verificando si el servidor NO posee dicho archivo
-				self.filesPermission[machine][i]={}
-				self.filesPermission[machine][i][machine]="escritura"
-		for i in self.servers:#lista de direcciones de servidores
-			for j in self.servers.get(i).getFiles():#Obtiene los archivos por cada servidor
-				
-				if not j in self.filesPermission.get(machine):
-					self.filesPermission[machine][j]={}
-					self.filesPermission[machine][j][i]=permissions[random.randint(0, 2)]
-				elif(not i in self.filesPermission.get(machine).get(j)):#verificando si el servidor NO posee dicho archivo ó si aun no ha sido almacenado ese archivo del servidor proveniente (mismo nombre en dos maquinas)
-					self.filesPermission[machine][j][i]=permissions[random.randint(0, 2)]
-
 	def updateFilesList(self):
 		self.answer.set("actualizando lista")
 		listTemp=[]
@@ -178,20 +161,17 @@ class serverRPC:
 	
 	def updateFilesAll(self):
 		self.answer.set("Actualizando archivos")
-		for i in self.servers:
-			self.updateFiles(i)
 		
 		self.updateBusy()
 		self.updateFilesList()
 		self.updateListBox()
-		
 		self.answer.set("Ready")
 		self.buttonUpdate.after(1000, self.updateFilesListData)
 
 	def updateFilesListData(self):
 		for i in self.servers:
 			self.servers.get(i).printBox1("Hay actualización disponible de archivos")
-		self.printBox1("Archivos actualizados")
+		self.printBox1("Actualizado archivos")
 	
 	def updateListBox(self):
 		listaTemp=self.getFilesList()
@@ -202,14 +182,6 @@ class serverRPC:
 	def getFilesList(self):
 		return self.filesList
 
-	def getPermission(self, machine, fileName):
-		fileNumber=0
-		if(":" in fileName):
-			fileName, fileNumber=fileName.split(":")
-			fileNumber=int(fileNumber)
-		for enum, i in enumerate(self.filesBusy.get(fileName)):#Busy is a static list
-			if(enum==fileNumber):
-				return self.filesPermission.get(machine).get(fileName).get(i)
 
 	def setBusy(self, machine, fileName):
 		fileNumber=0
@@ -220,7 +192,7 @@ class serverRPC:
 			if(enum==fileNumber):
 				if self.filesBusy.get(fileName).get(i) is None:
 					self.filesBusy[fileName][i]=machine
-					self.printBox1("se ha ocupado el archivo {}, ubicado en {}, por {}".format(fileName, i, machine))
+					self.printBox1("Ahora está ocupado el archivo {} guardado en {} por {}".format(fileName, i, machine))
 					return True
 				else:
 					break
@@ -236,7 +208,7 @@ class serverRPC:
 			if(enum==fileNumber):
 				if self.filesBusy.get(fileName).get(i) is not None:
 					self.filesBusy[fileName][i]=None
-					self.printBox1("Se ha dejado de ocupar el archivo {}, ubicado en {}".format(fileName, i))
+					self.printBox1("Ya no está ocupado el archivo {} guardado en {}".format(fileName, i))
 					return True
 				else:
 					break
@@ -252,29 +224,98 @@ class serverRPC:
 			if(enum==fileNumber):
 				serverFile=i
 				self.filesBusy[fileName][i]=None
-		self.printBox1("Modificado el archivo {} ubicado en {}".format(fileName, serverFile))
-		self.servers.get(serverFile).modifyFile(fileName, fileData)
+		
 
-	def deleteFile(self, fileName):
-		fileNumber=0
-		if(":" in fileName):
-			fileName, fileNumber=fileName.split(":")
-			fileNumber=int(fileNumber)
-		for enum, i in enumerate(self.filesBusy.get(fileName)):
-			if(enum==fileNumber):
-				serverFile=i
-				break
-		for i in self.filesPermission:
-			self.filesPermission.get(i).get(fileName).pop(serverFile)
-			if(len(self.filesPermission.get(i).get(fileName))==0):
-				self.filesPermission.get(i).pop(fileName)
+
+
+		valueVersion=0
+		extension=False
+		temp=""
+		versiones=[]
+		for enum, i in enumerate(reversed(fileName)):
+			if i.isdigit():
+				temp=i+temp
+			elif(not extension):
+				if(i=="."):
+					extension=True
+				elif(i=="v" and len(temp)>0):
+					pos=enum
+					break
+				elif(len(temp)>0):
+					temp=""
+					pos=enum
+					break
+			else:
+				if(i=="v"):
+					pos=enum
+					break
+				else:
+					temp=""
+					pos=enum
+					break
+		print("temp ->", temp)
+		if(len(temp)>0):
+			if(fileName[-(pos+2)]==" "):
+				fileName=fileName[:-(pos+2)]
+				print("fileName ->", fileName)
+				print("pos ->", pos)
+				valueVersion=int(temp)
+		else:
+			fileName=fileName[:-(pos)]
+			
+
+
+
+		
+		for i in self.filesBusy:
+			if(serverFile in self.filesBusy.get(i) and fileName in i):
+				if(fileName in i):
+					temp=""
+					pos=0
+					extension=False
+					#print("esta en value")
+					for enum, j in enumerate(reversed(i)):
+						if j.isdigit():
+							temp=j+temp
+						elif(not extension):
+							if(j=="."):
+								extension=True
+							elif(j=="v" and len(temp)>0):
+								pos=enum
+								break
+							elif(len(temp)>0):
+								temp=""
+								pos=enum
+								break
+						else:
+							if(j=="v"):
+								pos=enum
+								break
+							else:
+								temp=""
+								pos=enum
+								break
 				
-		self.filesBusy.get(fileName).pop(serverFile)
-		if(len(self.filesBusy.get(fileName))==0):
-			self.filesBusy.pop(fileName)
-		self.printBox1("Borrado el archivo {} ubicado en {}".format(fileName, serverFile))
-		self.servers.get(serverFile).deleteFile(fileName)
+				if(len(temp)>0):
+					if(i[-(pos+2)]==" "):
+						if(fileName==i[:-(pos+2)]):
+							versiones.append(int(temp))
+		while(True):
+			valueVersion+=1
+			if not valueVersion in versiones:
+				fileName+=" v"+str(valueVersion)+".txt"
+				if(not fileName in self.filesBusy):
+					self.filesBusy[fileName]={}
+					self.filesBusy[fileName][serverFile]=None
+				else:	
+					self.filesBusy[fileName][serverFile]=None
+				break
 
+		self.servers.get(serverFile).modifyFile(fileName, fileData)
+		self.printBox1("modificado el archivo {} guardado en {}".format(fileName, serverFile))
+		self.updateFilesAll()
+
+	
 	
 
 
@@ -288,7 +329,7 @@ class serverRPC:
 		for enum, i in enumerate(self.filesBusy.get(fileName)):
 			if(enum==fileNumber):
 				serverFile=i
-		self.printBox1("Brindado información del archivo {} ubicado en {}".format(fileName, serverFile))
+		self.printBox1("Solicitado el archivo {} guardado en {}".format(fileName, serverFile))
 		return self.servers.get(serverFile).getFile(fileName)
 		
 
@@ -300,7 +341,6 @@ class serverRPC:
 		self.buttonShowBusy.config(state=tkinter.NORMAL)
 		self.buttonCancel.config(state=tkinter.DISABLED)
 		self.answer.set("Ready")
-		
 
 	
 	def runServer(self):
@@ -310,10 +350,7 @@ class serverRPC:
 			self.server.register_function(self.getFilesList, 'getFilesList')
 			self.server.register_function(self.getFile, 'getFile')
 			self.server.register_function(self.setBusy, 'setBusy')
-			self.server.register_function(self.getPermission, 'getPermission')
 			self.server.register_function(self.modifyFile, 'modifyFile')
-			self.server.register_function(self.removeBusy, 'removeBusy')
-			self.server.register_function(self.deleteFile, 'deleteFile')
 
 		else:
 			print("Hay errores")
