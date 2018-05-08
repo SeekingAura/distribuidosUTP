@@ -19,26 +19,39 @@ class serverRPC:
 		self.ip=ip
 		self.puerto=puerto
 		self.ownAddres="http://"+ip+":"+str(puerto)
+		# used how name of server/client
 		self.tipo=tipo
+		# data about coneection to server
 		self.conecction=None
+		# list with name files from server
 		self.filesList=[]
+		# States on program
 		self.reading=False
 		self.writing=False
 
 
 		#Tkinter
 		self.root = tkinter.Tk()
+		# Window name
 		self.root.wm_title("archivos - "+tipo)
+		# Scrollbar object
 		scrollbar = tkinter.Scrollbar(self.root, orient=tkinter.VERTICAL)
+		# Text Box - Log server
 		self.TextoBox = tkinter.Text(self.root, height=8, width=80, yscrollcommand=scrollbar.set)
+		# Text Box - Text to edit
 		self.TextoBox2 = tkinter.Text(self.root, height=8, width=80, yscrollcommand=scrollbar.set)
+		# set scrollbar movement
 		scrollbar.config(command=self.yview)
+		# set scrollbar direction
 		scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
-		
+		# set scrollbar on Text Box
 		self.TextoBox.pack(side=tkinter.LEFT, fill=tkinter.Y)
-		self.TextoBox.config(state=tkinter.DISABLED)
+		
 		self.TextoBox2.pack(side=tkinter.LEFT, fill=tkinter.Y)
+		# Set text box mode only read
 		self.TextoBox2.config(state=tkinter.DISABLED)
+		self.TextoBox.config(state=tkinter.DISABLED)
+		# Set frame from Tkinter Object
 		frame = tkinter.Frame(self.root)
 		frame.pack()
 		
