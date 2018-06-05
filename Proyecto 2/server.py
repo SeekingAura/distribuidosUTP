@@ -47,7 +47,7 @@ class serverRPC:
 		self.root.wm_title("archivos - "+tipo)
 		scrollbar = tkinter.Scrollbar(self.root, orient=tkinter.VERTICAL)
 		scrollbarH = tkinter.Scrollbar(self.root, orient=tkinter.HORIZONTAL)
-		self.TextoBox = tkinter.Text(self.root, height=8, width=50, yscrollcommand=scrollbar.set)
+		self.TextoBox = tkinter.Text(self.root, height=8, width=90, yscrollcommand=scrollbar.set)
 		self.TextoBox2 = tkinter.Text(self.root, height=8, width=50, yscrollcommand=scrollbar.set)
 		scrollbar.config(command=self.yview)
 		scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
@@ -87,17 +87,20 @@ class serverRPC:
 		self.buttonUpdate = tkinter.Button(frame, text='Update Files', command=self.updateFilesAll)
 		self.buttonUpdate.grid(row=3, column=1, columnspan=1)
 
+		self.buttonshowPermissions = tkinter.Button(frame, text='Show permissions', command=self.showPermissions)
+		self.buttonshowPermissions.grid(row=4, column=0, columnspan=1)
+
 		#self.buttonOthers = tkinter.Button(frame, text='Update Others', command=self.updateOthers)
 		#self.buttonOthers.grid(row=4, column=0, columnspan=1)
 
-		self.buttonSystem = tkinter.Button(frame, text='updateSystem', command=self.updateSystem)
-		self.buttonSystem.grid(row=4, column=0, columnspan=1)
+		#self.buttonSystem = tkinter.Button(frame, text='updateSystem', command=self.updateSystem)
+		#self.buttonSystem.grid(row=4, column=0, columnspan=1)
 
-		self.buttonFilesData = tkinter.Button(frame, text='updateListBox', command=self.updateListBox)
-		self.buttonFilesData.grid(row=4, column=1, columnspan=1)
+		#self.buttonFilesData = tkinter.Button(frame, text='updateListBox', command=self.updateListBox)
+		#self.buttonFilesData.grid(row=4, column=1, columnspan=1)
 
-		self.buttonSetupOthers = tkinter.Button(frame, text='setupOthers', command=self.setupOthers)
-		self.buttonSetupOthers.grid(row=5, column=1, columnspan=1)
+		#self.buttonSetupOthers = tkinter.Button(frame, text='setupOthers', command=self.setupOthers)
+		#self.buttonSetupOthers.grid(row=5, column=1, columnspan=1)
 
 
 		#self.buttonShowBusy = tkinter.Button(frame, text='Select Busy Files', command=self.showBusy)
@@ -132,19 +135,42 @@ class serverRPC:
 		self.TextoBox2.see(tkinter.END)
 		self.TextoBox2.config(state=tkinter.DISABLED)
 	
+	def showPermissions(self):
+		fileSelected=self.tree.selection()
+		if(len(fileSelected)==1):
+			fileID=fileSelected[0]
+			parent=self.tree.parent(fileID)
+			fileName=self.tree.item(fileID)['text']
+			if(not parent!=""):
+				#print("servidor ID -> ", fileName)
+				serverShow=self.getServerID(fileName)
+				self.printBox1("Mostrando Permisos del servidor {}".format(serverShow))
+				tempdict={}
+				for j in self.filesPermission.get(serverShow):
+					for k in self.filesPermission.get(serverShow).get(j):
+						if not k in tempdict:
+							tempdict[k]={}
+						tempdict[k][j]=self.filesPermission.get(serverShow).get(j).get(k)
+				for i in tempdict:
+					self.printBox1("Dueño {}".format(i))
+					for j in tempdict.get(i):
+						self.printBox1("Archivo {}, Permisos {}".format(j, tempdict.get(i).get(j)))
+			else:
+				self.printBox1("ERROR - Debe escojer un servidor (carpeta)")
+
 
 	def getServers(self):
 		return self.servers
 
 	def updateFilesFinal(self):
-		self.printBox1("efectuando updateFilesFinal")
+		#self.printBox1("efectuando updateFilesFinal")
 		self.filesFinal=self.files
 		for l in self.serversControl:
 			self.filesFinal=dict(self.filesFinal, **self.serversControl.get(l).getFiles())
-		self.printBox1("efectuado updateFilesFinal")
+		#self.printBox1("efectuado updateFilesFinal")
 
 	def updateServersIDFinal(self):
-		self.printBox1("efectuando updateServersIDFinal")
+		#self.printBox1("efectuando updateServersIDFinal")
 		self.serversIDFinal=self.serversID
 		self.serversIDLen=[]
 		tempCount=self.registers
@@ -154,20 +180,19 @@ class serverRPC:
 			for i in serversIDTemp:
 				self.serversIDFinal[str(int(i)+tempCount)]=serversIDTemp.get(i)
 			tempCount+=len(serversIDTemp)
-		self.printBox1("efectuado updateServersIDFinal")
+		#self.printBox1("efectuado updateServersIDFinal")
 
-	def setupOthers(self):
-		for i in self.serversControl:
-			self.OthersServers=self.serversControl.get(i).getServers()
+	# def setupOthers(self):
+	# 	for i in self.serversControl:
+	# 		self.OthersServers=self.serversControl.get(i).getServers()
 
 	def updateFilesOthers(self):
 		permissions=["lectura", "escritura", "ninguno"]
-		print("haciendo filesothers")
+		#print("haciendo filesothers")
 		
 
 		for k in self.OthersServers:
 			for i in self.servers:#lista de direcciones de servidores
-				#print("pasanado por i-> {}, del valor k-> {}".format(i, k))
 				for j in self.OthersServers.get(k).getFiles():#Obtiene los archivos por cada servidor
 					if not i in self.filesPermission:
 						self.filesPermission[i]={}
@@ -289,6 +314,7 @@ class serverRPC:
 	def register(self, ipServer, puertoServer):
 		#value=xmlrpc.client.ServerProxy("http://"+ipServer+":"+puertoServer)
 		self.answer.set("Registrando cliente")
+		self.printBox1("Registrando el servidor {}".format("http://"+ipServer+":"+puertoServer))
 		self.servers["http://"+ipServer+":"+puertoServer]=xmlrpc.client.ServerProxy("http://"+ipServer+":"+puertoServer, allow_none=True)
 		self.filesPermission["http://"+ipServer+":"+puertoServer]={}
 		self.serversID[str(self.registers)]="http://"+ipServer+":"+puertoServer
@@ -317,6 +343,7 @@ class serverRPC:
 	def updateFiles(self, machine):
 		permissions=["lectura", "escritura", "ninguno"]
 		self.answer.set("Actualizando permisos")
+		#self.filesPermission[permisosde][archivo][dueñ]
 		for i in self.servers.get(machine).getFiles():
 			if not i in self.filesPermission.get(machine):#verificando si el servidor NO posee dicho archivo
 				self.filesPermission[machine][i]={}
@@ -334,19 +361,20 @@ class serverRPC:
 	def updateListExtern(self):
 		self.updateFilesFinal()
 		self.updateServersIDFinal()
-		print("anunciando que actualicen")
+		#print("anunciando que actualicen")
 		# for i in self.servers:
 		# 	print("anunciando que actualice -> ", i)
 		# 	self.servers.get(i).printBox1("Actualizado archivos del sistema")
-	def updateSystem(self):
-		print("HAGO OTHERS")
-		self.updateFilesOthers()
+	# def updateSystem(self):
+	# 	print("HAGO OTHERS")
+	# 	self.updateFilesOthers()
 		
-		self.buttonUpdate.after(5000, self.updateFilesListData)
+	# 	self.buttonUpdate.after(5000, self.updateFilesListData)
 
 	def updateFilesAll(self):
+		self.printBox1("Actualizando archivos")
 		self.answer.set("Actualizando archivos")
-		#self.buttonUpdate.config(state=tkinter.DISABLED)
+		self.buttonUpdate.config(state=tkinter.DISABLED)
 		for i in self.servers:
 			self.updateFiles(i)
 		
@@ -355,18 +383,19 @@ class serverRPC:
 		self.updateSetCopy()
 		self.updateFilesCopy()
 		self.updateListExtern()
-		self.printBox1("Efectuado updateFilesAll")
-		#self.buttonUpdate.after(5000, self.updateSystem)
+		#self.printBox1("Efectuado updateFilesAll")
+		self.buttonUpdate.after(5000, self.updateFilesListData)
 
 	def updateFilesListData(self):
-		print("haciendo fileslist data")
+		
+		#print("haciendo fileslist data")
 		for i in self.serversControl:
 			self.serversControl.get(i).updateListExtern()
 		self.printBox1("Archivos actualizados")
 		for i in self.servers:
-			self.servers.get(i).printBox1("Actualziación disponible")
+			self.servers.get(i).updateListBox()
 		self.buttonUpdate.config(state=tkinter.ACTIVE)
-		
+		self.updateListBox()
 		self.answer.set("Ready")
 	
 	def updateListBox(self):
@@ -379,6 +408,7 @@ class serverRPC:
 		self.printBox1("Se ha actualizado la lista")
 
 	def updateSetCopy(self):
+		self.answer.set("Estableciendo sistema de copias")
 		for i in self.files:#
 			if(not i in self.filesCopy):
 				self.filesCopy[i]={}
@@ -392,12 +422,14 @@ class serverRPC:
 				
 
 	def updateFilesCopy(self):
+		self.answer.set("Actualizando copias")
 		for i in self.filesCopy:#
 			for j in self.filesCopy.get(i):
 				for k in self.files.get(i):
 					if(not k in self.filesCopy.get(i).get(j)):#Verificando si ya está copiado el archivo
 						self.filesCopy[i][j][k]={}#i-> Servidor relacionado, j-> Servidor a donde copiar, k -> Archivo
 						if(i!=j):
+							self.printBox1("Creando copia de archivo {}, dueño {} al servidor {}".format(k, i, j))
 							self.servers.get(j).updateCopy(k, [*self.serversID.keys()][[*self.serversID.values()].index(i)], self.servers.get(i).getFile(k))
 
 					
@@ -408,19 +440,22 @@ class serverRPC:
 		return self.serversID
 
 	def getFilesList(self):
-		print("self.filesFinal -> ", self.filesFinal)
-		print("self.serversIDFinal -> ", self.serversIDFinal)
+		#print("self.filesFinal -> ", self.filesFinal)
+		#print("self.serversIDFinal -> ", self.serversIDFinal)
 		return [self.filesFinal, self.serversIDFinal]
 
 	def getPermission(self, machine, fileName, serverID):
+		
 		serverName=self.serversIDFinal.get(serverID)
+		self.printBox1("Verifica permisos del archivo {}, dueño {}, por {}".format(fileName, serverName, machine))
 		return self.filesPermission.get(machine).get(fileName).get(serverName)
 
 	def setBusy(self, machine, fileName, serverID):
-		if(serverID>=self.registers):
+		
+		if(int(serverID)>=self.registers):
 			tempPos=self.registers
 			for enum, i in enumerate(self.serversIDLen):#control para mas de 2 servidores
-				if(serverID<=tempPos+i):
+				if(int(serverID)<=tempPos+i):
 					indexPos=enum
 					break
 				else:
@@ -431,6 +466,7 @@ class serverRPC:
 			return result	
 		else:
 			serverName=self.serversID.get(serverID)
+			self.printBox1("Solicita ocupar el archivo {}, dueño {}, por {}".format(fileName, serverName, machine))
 			
 			if self.filesBusy.get(serverName).get(fileName) is None:
 				self.filesBusy[serverName][fileName]=machine
@@ -454,10 +490,10 @@ class serverRPC:
 		self.servers.get(serverFile).modifyFile(fileName, fileData)
 
 	def deleteFile(self, fileName, serverID):#Probablmente no funcione bien
-		if(serverID>=self.registers):
+		if(int(serverID)>=self.registers):
 			tempPos=self.registers
 			for enum, i in enumerate(self.serversIDLen):#control para mas de 2 servidores
-				if(serverID<=tempPos+i):
+				if(int(serverID)<=tempPos+i):
 					indexPos=enum
 					break
 				else:
@@ -477,9 +513,9 @@ class serverRPC:
 			for i in self.filesCopy.get(serverFile):
 				self.servers.get(i).deleteCopy(fileName, serverID)
 				self.filesCopy.get(serverFile).get(i).pop(fileName)
-					
-
+			self.files.get(serverFile).remove(fileName)
 			self.servers.get(serverFile).deleteFile(fileName)
+			self.buttonUpdate.after(5000, self.updateFilesAll)
 	
 	def getServerID(self, serverID):
 		return self.serversID.get(serverID)
@@ -515,6 +551,7 @@ class serverRPC:
 			else:
 				fileContent=self.servers.get(serverName).getFile(fileName)
 			self.filesCopy[serverName][serverRead][fileName][serverWant]="Lectura"
+		self.printBox1("Enviado contenido de archivo {}, dueño {}, solicitado por {}".format(fileName, serverName, serverWant))
 		return fileContent, serverRead
 
 	def closeFile(self, fileName, serverOwn, serverCopy, serverHave):
@@ -540,7 +577,7 @@ class serverRPC:
 		self.server.register_function(self.register, 'register')
 		self.server.register_function(self.printBox1, 'printBox1')
 		self.server.register_function(self.registerSystem, 'registerSystem')
-		self.server.register_function(self.updateFilesOthers, 'updateFilesOthers')
+		#self.server.register_function(self.updateFilesOthers, 'updateFilesOthers')
 		#self.server.register_function(self.updateOthers, 'updateOthers')
 		self.server.register_function(self.updateListExtern, 'updateListExtern')
 		self.server.register_function(self.getServersID, 'getServersID')

@@ -230,8 +230,9 @@ class serverRPC:
 				permission=self.conecction.getPermission(self.ownAddres, fileName, serverID)
 				if(permission=="escritura"):
 					if(self.conecction.setBusy(self.ownAddres, fileName, serverID)):#Set busy file
-						self.conecction.deleteFile(fileName, serverID)
 						self.answer.set("Borrando Archivo")
+						self.conecction.deleteFile(fileName, serverID)
+						self.answer.set("Ready")
 					else:
 						self.printBox1("ERROR, El archivo no se puede borrar está ocupado")
 				else:
@@ -247,12 +248,19 @@ class serverRPC:
 		fileEdit.close()
 
 	def deleteCopy(self, fileName, serverID):
-		os.remove(self.filesCopyPath+"/"+str(serverID)+"/"+fileName)
+		#print("delete -> ", serverID)
+		try:
+			os.remove(self.filesCopyPath+"/"+str(serverID)+"/"+fileName)
+		except:
+			print("Ya estaba borrado")
 
 
 	def deleteFile(self, fileName):
-		os.remove(self.filesPath+"/"+fileName)
-
+		#print("borrando -> ", fileName)
+		try:
+			os.remove(self.filesPath+"/"+fileName)
+		except:
+			print("Ya estaba borrado")
 
 	def saveFile(self):
 		self.answer.set("Guardando...")
@@ -343,6 +351,7 @@ class serverRPC:
 		self.server.register_function(self.updateCopy, 'updateCopy')
 		self.server.register_function(self.modifyFile, 'modifyFile')
 		self.server.register_function(self.deleteFile, 'deleteFile')
+		self.server.register_function(self.deleteCopy, 'deleteCopy')
 		self.server.register_function(self.printBox1, 'printBox1')
 		self.server.register_function(self.updateListBox, 'updateListBox')
 		ipServer = str(input("Ingrese la ip del server principal\n"))
